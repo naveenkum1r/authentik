@@ -40,9 +40,13 @@ class SAMLBindings(models.TextChoices):
 
 class SAMLProvider(Provider):
     """SAML 2.0 Endpoint for applications which support SAML."""
-
-    acs_url = models.TextField(
-        validators=[DomainlessURLValidator(schemes=("http", "https"))], verbose_name=_("ACS URL")
+    
+    acs_endpoints = models.JSONField(
+        default=list,
+        verbose_name=_("ACS Endpoints"),
+        help_text=_(
+            "List of ACS endpoint dictionaries with 'url', 'binding', 'index', and 'is_default'."
+        ),
     )
     audience = models.TextField(
         default="",
@@ -210,6 +214,12 @@ class SAMLProvider(Provider):
 
     def __str__(self):
         return f"SAML Provider {self.name}"
+
+    def get_default_acs(self):
+    for acs in self.acs_endpoints:
+        if acs.get("is_default", False):
+            return acs
+    return self.acs_endpoints[0] if self.acs_endpoints else None
 
     class Meta:
         verbose_name = _("SAML Provider")
